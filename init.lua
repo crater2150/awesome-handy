@@ -45,13 +45,16 @@ end
 
 -- restore an already running client as a handy client
 -- this ensures handy state across awesome restarts
-local function restore_client(handy_id, s)
+local function restore_client(handy_id, s, properties)
 	for _,c in ipairs(s.all_clients) do
 		if c:get_xproperty("handy_id") == handy_id then
 			clients[s][handy_id] = c
 			c:connect_signal("unmanage", function (c)
 				clients[s][handy_id] = nil
 			end)
+			for prop, val in pairs(properties) do
+				c[prop] = val
+			end
 			toggle_client(c, s)
 			return true
 		end
@@ -76,10 +79,10 @@ local function toggle(prog, placement, width, height, screen)
 		local c = clients[s][prog]
 		toggle_client(c, s)
 	else
-		if restore_client(prog, s) then return end
+		local properties = { width = w, height = h, floating = true, ontop = true }
+		if restore_client(prog, s, properties) then return end
 
-		awful.spawn(prog, { width = w, height = h, floating = true, ontop = true },
-			spawn_callback(prog, placement , s))
+		awful.spawn(prog, properties, spawn_callback(prog, placement , s))
 	end
 end
 
