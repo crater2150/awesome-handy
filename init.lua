@@ -38,6 +38,7 @@ local function toggle_client(c, s)
 	else
 		c:move_to_tag(s.selected_tag)
 		client.focus = c
+		c.hidden = false
 		c:set_xproperty("handy_visible", true)
 	end
 end
