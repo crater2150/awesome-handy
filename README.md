@@ -8,6 +8,8 @@ and hide a floating program with a keybinding. Main features:
   start a second instance but reuse the previous one
 - placement via `awful.placement` API
 
+*handy requires awesome 4.0+*
+
 ## Installation
 
 Put this repository somewhere in the lua search path for awesome. If your
