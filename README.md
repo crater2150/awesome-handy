@@ -35,11 +35,12 @@ end ),
 ```
 
 The following parameters are accepted:  
-`handy(prog, placement, width, height, screen)`
+`handy(prog, placement, width, height, options, screen)`
 
 - `prog`: the only mandatory parameter, the command to run
 - `placement`: controls the position of the window, see [`awful.placement`](https://awesomewm.org/apidoc/libraries/awful.placement.html)
 - `width`, `height`: the size of the program. Values ≤ 1 are interpreted as
   percentage of screen size, values above 1 are interpreted as pixel sizes
+- `options`: arguments passed to awful.placement
 - `screen`: the screen to use. if not given, defaults to the currently focused
   screen, so each screen will have its own instance

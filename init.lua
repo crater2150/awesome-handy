@@ -14,14 +14,14 @@ local clients = {}
 awesome.register_xproperty("handy_id", "string")
 awesome.register_xproperty("handy_visible", "boolean")
 
-local function spawn_callback(handy_id, placement, screen)
+local function spawn_callback(handy_id, placement, options, screen)
 	return function(c)
 		c:set_xproperty("handy_id", handy_id)
 		clients[screen][handy_id] = c
 
 		-- workaround for awesomeWM/awesome#1937
 		c:connect_signal("focus", function (c)
-			placement(c)
+			placement(c, options)
 		end)
 
 		-- remove clients that were closed
@@ -64,10 +64,11 @@ end
 
 -- Create a new window for the drop-down application when it doesn't
 -- exist, or toggle between hidden and visible states when it does
-local function toggle(prog, placement, width, height, screen)
+local function toggle(prog, placement, width, height, options, screen)
 	local place = placement or awful.placement.centered
 	local w = width or 0.5
 	local h = height or 0.5
+    local opt = options or {}
 	local s = screen or awful.screen.focused()
 
 	if w <= 1 then w = s.geometry.width * w end
@@ -82,7 +83,7 @@ local function toggle(prog, placement, width, height, screen)
 		local properties = { width = w, height = h, floating = true, ontop = true }
 		if restore_client(prog, s, properties) then return end
 
-		awful.spawn(prog, properties, spawn_callback(prog, placement , s))
+		awful.spawn(prog, properties, spawn_callback(prog, placement, opt, s))
 	end
 end
 
