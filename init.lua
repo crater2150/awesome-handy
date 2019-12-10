@@ -43,45 +43,81 @@ local function toggle_client(c, s)
 	end
 end
 
--- restore an already running client as a handy client
--- this ensures handy state across awesome restarts
-local function restore_client(handy_id, s, properties)
+-- look for an already running client on a single screen
+local function restore_client_single_screen(handy_id, s, key, properties, target_screen)
+	if not target_screen then
+		target_screen = s
+	end
+
 	for _,c in ipairs(s.all_clients) do
 		if c:get_xproperty("handy_id") == handy_id then
-			clients[s][handy_id] = c
+			clients[key][handy_id] = c
 			c:connect_signal("unmanage", function (c)
-				clients[s][handy_id] = nil
+				clients[key][handy_id] = nil
 			end)
 			for prop, val in pairs(properties) do
 				c[prop] = val
 			end
-			toggle_client(c, s)
+			toggle_client(c, target_screen)
 			return true
 		end
 	end
 	return false
 end
 
--- Create a new window for the drop-down application when it doesn't
--- exist, or toggle between hidden and visible states when it does
-local function toggle(prog, placement, width, height, options, screen)
+-- restore an already running client as a handy client
+-- this ensures handy state across awesome restarts
+local function restore_client(handy_id, key, properties, target_screen)
+	if key == 'single' then
+		-- try all screens for single instance clients
+		for s in screen do
+			if restore_client_single_screen(handy_id, s, key, properties, target_screen) then
+				return true
+			end
+		end
+		return false
+	else
+		return restore_client_single_screen(handy_id, target_screen, key, properties, target_screen)
+	end
+end
+
+
+-- 'target_screen' may be either
+--   - a screen object
+--   - not given (or a false value), to use the currently focused screen and
+--     spawn separate instances for each screen when first used there
+--   - the string "single", to use the currently focused screen and switch to
+--     the current screen on each call
+local function toggle(prog, placement, width, height, target_screen)
 	local place = placement or awful.placement.centered
 	local w = width or 0.5
 	local h = height or 0.5
-    local opt = options or {}
-	local s = screen or awful.screen.focused()
+	local opt = options or {}
+
+	local s
+	local key
+	if not target_screen then
+		s = awful.screen.focused()
+		key = s
+	elseif target_screen == 'single' then
+		s = awful.screen.focused()
+		key = 'single'
+	else
+		s = target_screen
+		key = s
+	end
 
 	if w <= 1 then w = s.geometry.width * w end
 	if h <= 1 then h = s.geometry.height * h end
 
-	if clients[s] == nil then clients[s] = {} end
+	if clients[key] == nil then clients[key] = {} end
 
-	if clients[s][prog] ~= nil then
-		local c = clients[s][prog]
+	if clients[key][prog] ~= nil then
+		local c = clients[key][prog]
 		toggle_client(c, s)
 	else
 		local properties = { width = w, height = h, floating = true, ontop = true }
-		if restore_client(prog, s, properties) then return end
+		if restore_client(prog, key, properties, s) then return end
 
 		awful.spawn(prog, properties, spawn_callback(prog, placement, opt, s))
 	end

@@ -44,3 +44,9 @@ The following parameters are accepted:
 - `options`: arguments passed to awful.placement
 - `screen`: the screen to use. if not given, defaults to the currently focused
   screen, so each screen will have its own instance
+
+  You can also set this to the string `"single"` for a client, that should only
+  have a single instance (instead of one per screen). The client will always be
+  shown on the currently focused screen, even if it was opened on another
+  screen before (note that if the client is currently shown on an unfocused
+  screen, you'll have to toggle it twice to move it to the current screen).
