@@ -16,11 +16,15 @@ Put this repository somewhere in the lua search path for awesome. If your
 awesome configuration is managed by git, I recommend adding this repo as a git
 submodule:
 
-```git submodule add https://github.com/crater2150/awesome-handy.git handy ```
+```
+git submodule add https://github.com/crater2150/awesome-handy.git handy
+```
 
 Then, in your `rc.lua`:
 
-```local handy = require("handy")```
+```lua
+local handy = require("handy")
+```
 
 ## Usage
 
@@ -35,7 +39,7 @@ end ),
 ```
 
 The following parameters are accepted:  
-`handy(prog, placement, width, height, options, screen)`
+`handy(prog, placement, width, height, options, screen, class)`
 
 - `prog`: the only mandatory parameter, the command to run
 - `placement`: controls the position of the window, see [`awful.placement`](https://awesomewm.org/apidoc/libraries/awful.placement.html)
@@ -50,3 +54,21 @@ The following parameters are accepted:
   shown on the currently focused screen, even if it was opened on another
   screen before (note that if the client is currently shown on an unfocused
   screen, you'll have to toggle it twice to move it to the current screen).
+- `class`: If given, must be the class or instance name of the window. Will
+  enable using the fallback method for programs not supporting startup
+  notification ([see below](#programs-without-startup-notification))
+
+
+## Programs without startup notification
+
+The default method for `handy` to detect which window is supposed to toggle is
+to use `awful.spawn` with a callback. This callback mechanism works by passing
+a startup id to the program, which only works with programs supporting the
+[Startup Notification spec](https://www.freedesktop.org/wiki/Specifications/startup-notification-spec/).
+
+When specifying the window instance name, handy will use a fallback method for
+the callback, which has the drawback, that if you start another program with
+the same class/instance during the startup of the first, the one which displays
+its window earlier will become the pop-up. If your program supports it, use
+a custom window instance that is unlikely to be used by other windows (e.g.
+"handy" + program name) and don't double press the key for handy.

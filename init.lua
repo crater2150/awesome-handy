@@ -7,7 +7,7 @@
 local awful = require("awful")
 local inspect = inspect
 
-local handy = {} 
+local handy = {}
 
 local clients = {}
 
@@ -29,6 +29,31 @@ local function spawn_callback(handy_id, placement, options, screen)
 			clients[screen][handy_id] = nil
 		end)
 	end
+end
+
+--- Fallback for clients that do not support the startup notification protocol
+-- Use a "manage" callback with window class to apply post-launch parameters
+-- Equivalent to calling awful.spawn(prog, properties, spawn_callback(prog, placement, opt, s))
+-- for a program with startup notification support
+--
+-- @param prog       Program command line, used as key
+-- @param instance   Window instance or class
+-- @param properties Client properties for the window
+-- @param placement  Placement rule
+-- @param opt        Options for the placement rule
+-- @param s          Screen
+local function awful_spawn_no_startup_notification(prog, instance, properties, placement, opt, s)
+	local callback
+	callback = function(c)
+		if c.instance == instance or c.class == instance then
+			awful.rules.execute(c, properties)
+			placement(c, opt)
+			spawn_callback(prog, placement, opt, s)(c)
+			client.disconnect_signal("manage", callback)
+		end
+	end
+	client.connect_signal("manage", callback)
+	awful.spawn(prog)
 end
 
 local function toggle_client(c, s)
@@ -88,7 +113,7 @@ end
 --     spawn separate instances for each screen when first used there
 --   - the string "single", to use the currently focused screen and switch to
 --     the current screen on each call
-local function toggle(prog, placement, width, height, target_screen)
+local function toggle(prog, placement, width, height, target_screen, class)
 	local place = placement or awful.placement.centered
 	local w = width or 0.5
 	local h = height or 0.5
@@ -119,7 +144,13 @@ local function toggle(prog, placement, width, height, target_screen)
 		local properties = { width = w, height = h, floating = true, ontop = true }
 		if restore_client(prog, key, properties, s) then return end
 
-		awful.spawn(prog, properties, spawn_callback(prog, placement, opt, s))
+		if class ~= nil then
+			awful_spawn_no_startup_notification(
+				prog, class, properties, placement, opt, s
+			)
+		else
+			awful.spawn(prog, properties, spawn_callback(prog, placement, opt, s))
+		end
 	end
 end
 
