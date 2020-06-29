@@ -9,7 +9,10 @@ local inspect = inspect
 
 local handy = {}
 
-local clients = {}
+local clients = { single = {} }
+for s in screen do
+	clients[s] = {}
+end
 
 awesome.register_xproperty("handy_id", "string")
 awesome.register_xproperty("handy_visible", "boolean")
@@ -134,8 +137,6 @@ local function toggle(prog, placement, width, height, target_screen, class)
 
 	if w <= 1 then w = s.geometry.width * w end
 	if h <= 1 then h = s.geometry.height * h end
-
-	if clients[key] == nil then clients[key] = {} end
 
 	if clients[key][prog] ~= nil then
 		local c = clients[key][prog]
