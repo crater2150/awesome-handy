@@ -19,6 +19,7 @@ awesome.register_xproperty("handy_visible", "boolean")
 
 local function spawn_callback(handy_id, placement, options, screen)
 	return function(c)
+		if clients[screen] == nil then clients[screen] = {} end
 		c:set_xproperty("handy_id", handy_id)
 		clients[screen][handy_id] = c
 
