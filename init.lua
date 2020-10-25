@@ -10,9 +10,9 @@ local inspect = inspect
 local handy = {}
 
 local clients = { single = {} }
-for s in screen do
+awful.screen.connect_for_each_screen(function(s)
 	clients[s] = {}
-end
+end)
 
 awesome.register_xproperty("handy_id", "string")
 awesome.register_xproperty("handy_visible", "boolean")
