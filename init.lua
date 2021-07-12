@@ -156,4 +156,8 @@ local function toggle(prog, placement, width, height, target_screen, class)
 	end
 end
 
+function handy.fun(prog, placement, width, height, target_screen, class)
+	return function() toggle(prog, placement, width, height, target_screen, class) end
+end
+
 return setmetatable(handy, { __call = function(_, ...) return toggle(...) end })
