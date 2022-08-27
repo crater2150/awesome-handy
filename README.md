@@ -12,13 +12,21 @@ and hide a floating program with a keybinding. Main features:
 
 ## Installation
 
-Put this repository somewhere in the lua search path for awesome. If your
-awesome configuration is managed by git, I recommend adding this repo as a git
-submodule:
+Put this repository somewhere in the lua search path for awesome.
+If you're using [LuaRocks](https://luarocks.org/), you can install it via
+```
+luarocks install --local awesome-handy
+```
+
+Alternatively, if your awesome configuration is managed by git, you can add
+this repo as a git submodule:
 
 ```
 git submodule add https://github.com/crater2150/awesome-handy.git handy
 ```
+
+Otherwise just clone it into your configuration directory.
+
 
 Then, in your `rc.lua`:
 
