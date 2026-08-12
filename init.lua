@@ -6,7 +6,13 @@
 --
 local awful = require("awful")
 local ruled = require("ruled")
-local gears = require("gears")
+
+local restore
+if awesome.release == "somewm" then
+	restore = require("handy.restore-somewm")
+else
+	restore = require("handy.restore-awesome")
+end
 
 local handy = {}
 
@@ -15,13 +21,12 @@ awful.screen.connect_for_each_screen(function(s)
 	clients[s] = {}
 end)
 
-awesome.register_xproperty("handy_id", "string")
-awesome.register_xproperty("handy_visible", "boolean")
-
 local function spawn_callback(handy_id, placement, options, screen)
 	return function(c)
-		if clients[screen] == nil then clients[screen] = {} end
-		c:set_xproperty("handy_id", handy_id)
+		if clients[screen] == nil then
+			clients[screen] = {}
+		end
+		restore.save_id(c, handy_id)
 		clients[screen][handy_id] = c
 
 		-- workaround for awesomeWM/awesome#1937
@@ -64,50 +69,12 @@ end
 local function toggle_client(c, s)
 	if c:isvisible() then
 		c.hidden = true
-		c:set_xproperty("handy_visible", false)
+		restore.save_visible(c, false)
 	else
 		c:move_to_tag(s.selected_tag)
 		client.focus = c
 		c.hidden = false
-		c:set_xproperty("handy_visible", true)
-	end
-end
-
--- look for an already running client on a single screen
-local function restore_client_single_screen(handy_id, s, key, properties, target_screen)
-	if not target_screen then
-		target_screen = s
-	end
-
-	for _,c in ipairs(s.all_clients) do
-		if c:get_xproperty("handy_id") == handy_id then
-			clients[key][handy_id] = c
-			c:connect_signal("unmanage", function (c)
-				clients[key][handy_id] = nil
-			end)
-			for prop, val in pairs(properties) do
-				c[prop] = val
-			end
-			toggle_client(c, target_screen)
-			return true
-		end
-	end
-	return false
-end
-
--- restore an already running client as a handy client
--- this ensures handy state across awesome restarts
-local function restore_client(handy_id, key, properties, target_screen)
-	if key == 'single' then
-		-- try all screens for single instance clients
-		for s in screen do
-			if restore_client_single_screen(handy_id, s, key, properties, target_screen) then
-				return true
-			end
-		end
-		return false
-	else
-		return restore_client_single_screen(handy_id, target_screen, key, properties, target_screen)
+		restore.save_visible(c, true)
 	end
 end
 
@@ -147,7 +114,9 @@ local function toggle(prog, placement, width, height, target_screen, class)
 		toggle_client(clients[key][prog], s)
 	else
 		local properties = { width = w, height = h, floating = true, ontop = true }
-		if restore_client(prog, key, properties, s) then return end
+		if restore.client(prog, key, properties, s, clients) then
+			return
+		end
 
 		if class ~= nil then
 			awful_spawn_no_startup_notification(prog, class, properties, place, opt, s)
