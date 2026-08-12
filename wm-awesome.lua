@@ -1,13 +1,13 @@
 awesome.register_xproperty("handy_id", "string")
 awesome.register_xproperty("handy_visible", "boolean")
 
-local restore = {}
+local wm = {}
 
-function restore.save_id(c, handy_id)
+function wm.save_id(c, handy_id)
 	c:set_xproperty("handy_id", handy_id)
 end
 
-function restore.save_visible(c, visible)
+function wm.save_visible(c, visible)
 	c:set_xproperty("handy_visible", visible)
 end
 
@@ -35,7 +35,7 @@ local function restore_client_single_screen(handy_id, s, key, properties, target
 				client.focus = c
 			end
 			c.hidden = not visible
-			restore.save_visible(c, visible)
+			wm.save_visible(c, visible)
 			return true
 		end
 	end
@@ -44,7 +44,7 @@ end
 
 -- restore an already running client as a handy client
 -- this ensures handy state across awesome restarts
-function restore.client(handy_id, key, properties, target_screen, clients)
+function wm.restore_client(handy_id, key, properties, target_screen, clients)
 	if key == "single" then
 		-- try all screens for single instance clients
 		for s in screen do
@@ -58,4 +58,4 @@ function restore.client(handy_id, key, properties, target_screen, clients)
 	end
 end
 
-return restore
+return wm

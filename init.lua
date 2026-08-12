@@ -6,19 +6,28 @@
 --
 local awful = require("awful")
 local ruled = require("ruled")
+local dbg = require("handy.debug")
 
-local restore
+local wm
 if awesome.release == "somewm" then
-	restore = require("handy.restore-somewm")
+	wm = require("handy.wm-somewm")
 else
-	restore = require("handy.restore-awesome")
+	wm = require("handy.wm-awesome")
 end
 
 local handy = {}
 
 local clients = { single = {} }
+local store_tags = {}
+
 awful.screen.connect_for_each_screen(function(s)
 	clients[s] = {}
+end)
+
+handy.TAG = "handy_store"
+screen.connect_signal("removed", function(s)
+	dbg("clients on removed screen", clients[s])
+	wm.save_offscreen_clients(s, clients, handy.TAG)
 end)
 
 local function spawn_callback(handy_id, placement, options, key)
@@ -26,7 +35,7 @@ local function spawn_callback(handy_id, placement, options, key)
 		if clients[key] == nil then
 			clients[key] = {}
 		end
-		restore.save_id(c, handy_id)
+		wm.save_id(c, handy_id)
 		clients[key][handy_id] = c
 
 		if awesome.release == "somewm" then
@@ -73,12 +82,12 @@ end
 local function toggle_client(c, s)
 	if c:isvisible() then
 		c.hidden = true
-		restore.save_visible(c, false)
+		wm.save_visible(c, false)
 	else
 		c:move_to_tag(s.selected_tag)
 		client.focus = c
 		c.hidden = false
-		restore.save_visible(c, true)
+		wm.save_visible(c, true)
 	end
 end
 
@@ -117,8 +126,8 @@ local function toggle(prog, placement, width, height, target_screen, class)
 	if clients[key][prog] ~= nil then
 		toggle_client(clients[key][prog], s)
 	else
-		local properties = { width = w, height = h, floating = true, ontop = true }
-		if restore.client(prog, key, properties, s, clients) then
+		properties = { width = w, height = h, floating = true, ontop = true }
+		if wm.restore_client(prog, key, properties, s, clients) then
 			return
 		end
 
@@ -133,6 +142,12 @@ end
 function handy.fun(prog, placement, width, height, target_screen, class)
 	return function()
 		toggle(prog, placement, width, height, target_screen, class)
+	end
+end
+
+function handy.unhide_all()
+	for _, c in ipairs(client.get()) do
+		c.hidden = false
 	end
 end
 
