@@ -21,29 +21,33 @@ awful.screen.connect_for_each_screen(function(s)
 	clients[s] = {}
 end)
 
-local function spawn_callback(handy_id, placement, options, screen)
+local function spawn_callback(handy_id, placement, options, key)
 	return function(c)
-		if clients[screen] == nil then
-			clients[screen] = {}
+		if clients[key] == nil then
+			clients[key] = {}
 		end
 		restore.save_id(c, handy_id)
-		clients[screen][handy_id] = c
+		clients[key][handy_id] = c
 
-		-- workaround for awesomeWM/awesome#1937
-		c:connect_signal("focus", function(c)
+		if awesome.release == "somewm" then
 			placement(c, options)
-		end)
+		else
+			-- workaround for awesomeWM/awesome#1937
+			c:connect_signal("focus", function(c)
+				placement(c, options)
+			end)
+		end
 
 		-- remove clients that were closed
 		c:connect_signal("request::unmanage", function(c)
-			clients[screen][handy_id] = nil
+			clients[key][handy_id] = nil
 		end)
 	end
 end
 
 --- Fallback for clients that do not support the startup notification protocol
 -- Use a "manage" callback with window class to apply post-launch parameters
--- Equivalent to calling awful.spawn(prog, properties, spawn_callback(prog, placement, opt, s))
+-- Equivalent to calling awful.spawn(prog, properties, spawn_callback(prog, placement, opt, key))
 -- for a program with startup notification support
 --
 -- @param prog       Program command line, used as key
@@ -51,14 +55,14 @@ end
 -- @param properties Client properties for the window
 -- @param placement  Placement rule
 -- @param opt        Options for the placement rule
--- @param s          Screen
-local function awful_spawn_no_startup_notification(prog, instance, properties, placement, opt, s)
+-- @param key        Screen or "single"
+local function awful_spawn_no_startup_notification(prog, instance, properties, placement, opt, key)
 	local callback
 	callback = function(c)
 		if c.instance == instance or c.class == instance then
 			ruled.client.execute(c, properties)
 			placement(c, opt)
-			spawn_callback(prog, placement, opt, s)(c)
+			spawn_callback(prog, placement, opt, key)(c)
 			client.disconnect_signal("request::manage", callback)
 		end
 	end
@@ -121,7 +125,7 @@ local function toggle(prog, placement, width, height, target_screen, class)
 		if class ~= nil then
 			awful_spawn_no_startup_notification(prog, class, properties, place, opt, s)
 		else
-			awful.spawn(prog, properties, spawn_callback(prog, placement, opt, s))
+			awful.spawn(prog, properties, spawn_callback(prog, placement, opt, key))
 		end
 	end
 end
