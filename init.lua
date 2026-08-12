@@ -5,7 +5,8 @@
 -- handy("console", "urxvt",
 --
 local awful = require("awful")
-local inspect = inspect
+local ruled = require("ruled")
+local gears = require("gears")
 
 local handy = {}
 
@@ -24,12 +25,12 @@ local function spawn_callback(handy_id, placement, options, screen)
 		clients[screen][handy_id] = c
 
 		-- workaround for awesomeWM/awesome#1937
-		c:connect_signal("focus", function (c)
+		c:connect_signal("focus", function(c)
 			placement(c, options)
 		end)
 
 		-- remove clients that were closed
-		c:connect_signal("unmanage", function (c)
+		c:connect_signal("request::unmanage", function(c)
 			clients[screen][handy_id] = nil
 		end)
 	end
@@ -50,13 +51,13 @@ local function awful_spawn_no_startup_notification(prog, instance, properties, p
 	local callback
 	callback = function(c)
 		if c.instance == instance or c.class == instance then
-			awful.rules.execute(c, properties)
+			ruled.client.execute(c, properties)
 			placement(c, opt)
 			spawn_callback(prog, placement, opt, s)(c)
-			client.disconnect_signal("manage", callback)
+			client.disconnect_signal("request::manage", callback)
 		end
 	end
-	client.connect_signal("manage", callback)
+	client.connect_signal("request::manage", callback)
 	awful.spawn(prog)
 end
 
@@ -110,7 +111,6 @@ local function restore_client(handy_id, key, properties, target_screen)
 	end
 end
 
-
 -- 'target_screen' may be either
 --   - a screen object
 --   - not given (or a false value), to use the currently focused screen and
@@ -128,28 +128,29 @@ local function toggle(prog, placement, width, height, target_screen, class)
 	if not target_screen then
 		s = awful.screen.focused()
 		key = s
-	elseif target_screen == 'single' then
+	elseif target_screen == "single" then
 		s = awful.screen.focused()
-		key = 'single'
+		key = "single"
 	else
 		s = target_screen
 		key = s
 	end
 
-	if w <= 1 then w = s.geometry.width * w end
-	if h <= 1 then h = s.geometry.height * h end
+	if w <= 1 then
+		w = s.geometry.width * w
+	end
+	if h <= 1 then
+		h = s.geometry.height * h
+	end
 
 	if clients[key][prog] ~= nil then
-		local c = clients[key][prog]
-		toggle_client(c, s)
+		toggle_client(clients[key][prog], s)
 	else
 		local properties = { width = w, height = h, floating = true, ontop = true }
 		if restore_client(prog, key, properties, s) then return end
 
 		if class ~= nil then
-			awful_spawn_no_startup_notification(
-				prog, class, properties, placement, opt, s
-			)
+			awful_spawn_no_startup_notification(prog, class, properties, place, opt, s)
 		else
 			awful.spawn(prog, properties, spawn_callback(prog, placement, opt, s))
 		end
@@ -157,7 +158,13 @@ local function toggle(prog, placement, width, height, target_screen, class)
 end
 
 function handy.fun(prog, placement, width, height, target_screen, class)
-	return function() toggle(prog, placement, width, height, target_screen, class) end
+	return function()
+		toggle(prog, placement, width, height, target_screen, class)
+	end
 end
 
-return setmetatable(handy, { __call = function(_, ...) return toggle(...) end })
+return setmetatable(handy, {
+	__call = function(_, ...)
+		return toggle(...)
+	end,
+})
